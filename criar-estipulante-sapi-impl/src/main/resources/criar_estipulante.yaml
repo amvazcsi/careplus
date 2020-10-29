@@ -7,5 +7,3 @@ sf_username: "integration@careplus.com.crmdev01"
 sf_password: "mulesoft"
 sf_securityToken: "OTrMelz0S4EATIUpKOzUJGy1i"
 sf_url: "https://test.salesforce.com/services/Soap/u/48.0"
-
-ambiente: "HML"
