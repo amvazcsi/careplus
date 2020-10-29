@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<flow name="criar_atualizar_estipulanteFlow" doc:id="9bd5cd46-7da1-44c7-be1e-e373d2518c33" initialState="started">
+		<try doc:name="Try" doc:id="d9bff90f-3fde-4b56-8b11-1d787b69d28f" >
+			<ee:transform doc:name="Transform Message" doc:id="14c4dec4-1303-4960-a00e-098492fe7bb9" >
+				<ee:message >
+					<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+[
+  {
+  	"id": "0013B00000fmwlcQAA",
+    "firstname": "Jaguar",
+    "lastname": "TI",
+    "telefone": "2199998081",
+    "cargo": "consultoria",
+    "email": "mulesoft@jaguar.com",
+    "idCore":"ID3011",
+    "data": "30/11/1980"
+  },
+  {
+  	
+  	"id": "0013B00000fmwldQAA",
+    "firstname": "Brasil",
+    "lastname": "TI",
+    "telefone": "1199997071",
+    "cargo": "consultoria",
+    "email": "mulesoft@brasil.com",
+    "idCore":"ID3012",
+    "data": "01/01/1990"
+  },
+  {
+  	"id": "0013B00000fmwleQAA",
+    "firstname": "Deloitte",
+    "lastname": "TI",
+    "telefone": "3199995051",
+    "cargo": "consultoria",
+    "email": "mulesoft@deloitte.com",
+    "idCore":"ID3001"
+  }
+]]]></ee:set-payload>
+				</ee:message>
+			</ee:transform>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="fc2bf9da-7f3f-4b7d-9783-b901244ad03c" >
+					<ee:transform doc:name="Transform Message" doc:id="f5db04fb-37c9-48dc-97fe-37a495fad26d" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"erro": "Erro ao recuperar os registros no core.",
+	"description": error.description,
+	"type": {
+		"identifier": error.errorType.identifier,
+		"namespace": error.errorType.namespace
+	}
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<choice doc:name="Choice" doc:id="457fd67d-bf29-4410-94a4-900a507e507f" >
+			<when expression="#[sizeOf(payload) &gt; 0]">
+				<try doc:name="Try" doc:id="703bbddc-eb12-4a43-ad18-ff9f8a56e2f6" >
+					<ee:transform doc:name="Transform Message" doc:id="e8f7a430-5d8e-4c53-a52e-4c5fff147a77" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+
+type dtformatString = String { format: "YYYY-MM-dd" }
+type dtformatDate = Date {format: "dd/MM/yyyy"}
+
+fun date_format(date) =
+	if (!isBlank(date))
+		date as dtformatDate as dtformatString
+	else 
+		null
+---
+payload map {
+	Id: $.id,
+	Name: $.nome,
+	FirstName: $.firstname,
+	LastName: $.lastname,
+	Phone: $.telefone,
+	PersonEmail: $.email,
+	External_ID__c: $.idCore,
+	Data_de_nascimento__pc: date_format($.data)
+}]]></ee:set-payload>
+						</ee:message>
+						<ee:variables >
+							<ee:set-variable variableName="var_payload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload map {
+	 External_ID__c: $.idCore,
+	 id:$.id,
+	 success: null,
+	 errors: null
+}]]></ee:set-variable>
+						</ee:variables>
+					</ee:transform>
+					<salesforce:upsert doc:name="Criar Estipulantes" doc:id="3a8e678e-06db-474e-8e3f-751e69cb20fd" config-ref="Salesforce_Config" objectType="Account" externalIdFieldName="External_ID__c"/>
+					<ee:transform doc:name="Transform Message" doc:id="2e031457-2bbd-4708-9cce-2d9d0b751919" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+var firstInput = flatten(payload.items).payload
+
+var secondInput = vars.var_payload
+output application/json
+---
+secondInput map (value, index) ->
+  {
+    External_ID__c: value.External_ID__c,
+    id: firstInput[index].id,
+    success: firstInput[index].success,
+    errors: firstInput[index].errors map {
+    	message: $.message,
+    	statusCode: $.statusCode,
+    	fields: $.fields
+    }
+	
+  }]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<error-handler >
+						<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="b99a82a2-79ce-4336-8cf4-98169083297a" >
+							<ee:transform doc:name="Transform Message" doc:id="653b59dd-2a1d-476e-accf-a9097cb7b319" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"erro": "Erro ao conectar no Salesforce.",
+	"description": error.description,
+	"type": {
+		"identifier": error.errorType.identifier,
+		"namespace": error.errorType.namespace
+	}
+}]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-propagate>
+					</error-handler>
+				</try>
+				<try doc:name="Try" doc:id="dbd7a341-579e-4760-9536-195785e97e86" >
+					<ee:transform doc:name="Transform Message" doc:id="ec1beaf8-eb95-4975-b976-b248c88e461e" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+					<error-handler >
+						<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="d48303be-9394-4743-87a8-e7c65c46b6f0" >
+							<ee:transform doc:name="Transform Message" doc:id="cf1303ff-2ac1-43cd-96a9-cb7e3fc273df" >
+								<ee:message >
+									<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"erro": "Erro ao atualizar o core.",
+	"description": error.description,
+	"type": {
+		"identifier": error.errorType.identifier,
+		"namespace": error.errorType.namespace
+	}
+}]]></ee:set-payload>
+								</ee:message>
+							</ee:transform>
+						</on-error-propagate>
+					</error-handler>
+				</try>
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Transform Message" doc:id="52cdee73-2dda-4beb-8775-a7e93f12e399" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	messagem: "Não encontramos registro para ser inserido ou atualizado"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+</mule>

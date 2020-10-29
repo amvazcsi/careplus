@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="7c4031a4-ac18-4c8b-aaac-2b745bcf9e11" >
+		<salesforce:basic-connection username="${sf_username}" password="${sf_password}" securityToken="${sf_securityToken}" url="${sf_url}" />
+	</salesforce:sfdc-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="da26a610-b3b5-4ef9-a63c-e37a0dd6f14a" file="criar_estipulante.yaml" />
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="97fcb939-a0d3-4c1e-9d39-87bc8f0002a7" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<flow name="HTTP_Flow" doc:id="57807269-56d2-42a2-8be0-4e3030db1b5c" initialState="${stateHttpFlow}">
+		<http:listener doc:name="Listener" doc:id="5178e2c2-deac-4472-a7cb-39d4900c11aa" config-ref="HTTP_Listener_config" path="/criarestipulante" outputMimeType="application/json">
+			<http:error-response >
+				<http:body ><![CDATA[#[payload]]]></http:body>
+			</http:error-response>
+		</http:listener>
+		<flow-ref doc:name="Criar Atualizar Estipulante" doc:id="a6a5a5af-1a8b-4558-a144-02d0fcad175f" name="criar_atualizar_estipulanteFlow"/>
+	</flow>
+	<flow name="Scheduler_Flow" doc:id="165d1701-2599-4812-9aa2-6b981fefe60e" initialState="${stateSchedulerFlow}">
+		<scheduler doc:name="Scheduler" doc:id="2688465d-0f59-40ed-bed5-cff879cf5e44" >
+			<scheduling-strategy >
+				<fixed-frequency startDelay="${startdelay}" timeUnit="SECONDS"/>
+			</scheduling-strategy>
+		</scheduler>
+		<flow-ref doc:name="Criar Atualizar Estipulante" doc:id="37b0d05f-339a-4fb4-91bf-b3f5344ec5bf" name="criar_atualizar_estipulanteFlow"/>
+	</flow>
+</mule>

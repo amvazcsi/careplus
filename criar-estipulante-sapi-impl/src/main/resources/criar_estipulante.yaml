@@ -1,0 +1,9 @@
+urlConsutar: "http://localhost:8080/core/recuperarEstipulantes"
+startdelay: "50"
+stateHttpFlow: started
+stateSchedulerFlow: stopped
+
+sf_username: "alevaz.careplus@deloitte.com.crmdev01"
+sf_password: "Jaguar30@!"
+sf_securityToken: "ymczUvEOGme2ngrAsIbPSDT0F"
+sf_url: "https://test.salesforce.com/services/Soap/u/48.0"
