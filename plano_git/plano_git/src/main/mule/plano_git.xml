@@ -10,6 +10,5 @@ http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/htt
 	<flow name="plano_gitFlow" doc:id="5a9e2e1e-b58c-4e0f-88af-3f7b6ffc831a" >
 		<http:listener doc:name="Listener" doc:id="1efecdb1-6ce5-4314-bc02-0f91ee6f1a47" config-ref="HTTP_Listener_config" path="/planogit"/>
 		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="8b3d158e-aaa9-4160-bb41-ea835f87419f" />
-		<set-payload value="#[payload]" doc:name="Set Payload" doc:id="33f53f9c-b77c-47f6-8048-e13c27f6310f" />
 	</flow>
 </mule>
